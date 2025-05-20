@@ -11,7 +11,6 @@ const TodoList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch todos on component mount
   useEffect(() => {
     fetchTodos();
   }, []);
@@ -85,6 +84,7 @@ const TodoList = () => {
       ));
     } catch (error) {
       console.error('Error updating todo:', error.message);
+      setError(error.message);
     }
   };
 
@@ -99,6 +99,7 @@ const TodoList = () => {
       setTodos(todos.filter(todo => todo.id !== id));
     } catch (error) {
       console.error('Error deleting todo:', error.message);
+      setError(error.message);
     }
   };
 
@@ -113,6 +114,7 @@ const TodoList = () => {
       setTodos(todos.filter(todo => !todo.completed));
     } catch (error) {
       console.error('Error clearing completed todos:', error.message);
+      setError(error.message);
     }
   };
 
@@ -124,78 +126,84 @@ const TodoList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-8 flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"
+          className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full"
         />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-2xl mx-auto"
+        className="max-w-3xl mx-auto"
       >
         {/* Header */}
         <motion.div
-          className="backdrop-blur-md bg-white/10 rounded-xl p-6 mb-8 shadow-lg"
+          className="backdrop-blur-xl bg-white/10 rounded-2xl p-8 mb-8 shadow-2xl border border-white/10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold text-center bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent mb-2">
             Todo List
           </h1>
+          <p className="text-center text-white/60 text-lg">
+            Stay organized and boost your productivity
+          </p>
         </motion.div>
 
         {/* Error Message */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-200"
-          >
-            {error}
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-200 backdrop-blur-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Add Todo Form */}
         <form onSubmit={addTodo} className="mb-8">
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <input
               type="text"
               value={newTodo}
               onChange={(e) => setNewTodo(e.target.value)}
-              placeholder="Add a new todo..."
-              className="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-indigo-400"
+              placeholder="What needs to be done?"
+              className="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/20 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 text-lg placeholder-white/40 transition-all"
             />
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-2 bg-indigo-500 rounded-lg hover:bg-indigo-600 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all text-lg font-medium shadow-lg shadow-indigo-500/20"
               type="submit"
             >
-              Add
+              Add Task
             </motion.button>
           </div>
         </form>
 
         {/* Filters */}
-        <div className="flex justify-center gap-4 mb-6">
+        <div className="flex justify-center gap-3 mb-8">
           {['all', 'active', 'completed'].map((filterType) => (
             <motion.button
               key={filterType}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setFilter(filterType)}
-              className={`px-4 py-2 rounded-lg capitalize ${
+              className={`px-6 py-3 rounded-xl capitalize text-lg font-medium transition-all ${
                 filter === filterType
-                  ? 'bg-indigo-500'
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/20'
                   : 'bg-white/10 hover:bg-white/20'
               }`}
             >
@@ -205,7 +213,7 @@ const TodoList = () => {
         </div>
 
         {/* Todo List */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <AnimatePresence>
             {filteredTodos.map((todo) => (
               <motion.div
@@ -213,18 +221,18 @@ const TodoList = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center gap-3 p-4 bg-white/10 rounded-lg backdrop-blur-sm"
+                className="group flex items-center gap-4 p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all"
               >
                 <input
                   type="checkbox"
                   checked={todo.completed}
                   onChange={() => toggleTodo(todo.id)}
-                  className="w-5 h-5 rounded border-white/20 bg-white/10"
+                  className="w-6 h-6 rounded-lg border-white/20 bg-white/10 checked:bg-indigo-500 checked:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 <span
-                  className={`flex-1 ${
+                  className={`flex-1 text-lg ${
                     todo.completed
-                      ? 'line-through text-white/50'
+                      ? 'line-through text-white/40'
                       : 'text-white'
                   }`}
                 >
@@ -234,9 +242,11 @@ const TodoList = () => {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => deleteTodo(todo.id)}
-                  className="text-red-400 hover:text-red-300"
+                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all"
                 >
-                  Delete
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </motion.button>
               </motion.div>
             ))}
@@ -248,13 +258,25 @@ const TodoList = () => {
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={clearCompleted}
-            className="mt-6 w-full px-6 py-2 bg-violet-500 rounded-lg hover:bg-violet-600 transition-colors"
+            className="mt-8 w-full px-6 py-4 bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl hover:from-violet-600 hover:to-purple-600 transition-all text-lg font-medium shadow-lg shadow-violet-500/20"
           >
             Clear Completed
           </motion.button>
+        )}
+
+        {/* Empty State */}
+        {filteredTodos.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12 text-white/60"
+          >
+            <p className="text-xl">No todos found</p>
+            <p className="mt-2">Add a new task to get started!</p>
+          </motion.div>
         )}
       </motion.div>
     </div>
