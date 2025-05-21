@@ -10,6 +10,8 @@ const TodoList = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingTodo, setEditingTodo] = useState(null);
+  const [editText, setEditText] = useState('');
 
   useEffect(() => {
     fetchTodos();
@@ -48,7 +50,8 @@ const TodoList = () => {
           { 
             text: newTodo.trim(),
             completed: false,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ])
         .select();
@@ -70,17 +73,52 @@ const TodoList = () => {
     }
   };
 
+  const startEditing = (todo) => {
+    setEditingTodo(todo.id);
+    setEditText(todo.text);
+  };
+
+  const saveEdit = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ 
+          text: editText.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setTodos(todos.map(todo =>
+        todo.id === id ? { ...todo, text: editText.trim(), updated_at: new Date().toISOString() } : todo
+      ));
+      setEditingTodo(null);
+    } catch (error) {
+      console.error('Error updating todo:', error.message);
+      setError(error.message);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingTodo(null);
+    setEditText('');
+  };
+
   const toggleTodo = async (id) => {
     try {
       const todo = todos.find(t => t.id === id);
       const { error } = await supabase
         .from('todos')
-        .update({ completed: !todo.completed })
+        .update({ 
+          completed: !todo.completed,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id);
 
       if (error) throw error;
       setTodos(todos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        todo.id === id ? { ...todo, completed: !todo.completed, updated_at: new Date().toISOString() } : todo
       ));
     } catch (error) {
       console.error('Error updating todo:', error.message);
@@ -116,6 +154,15 @@ const TodoList = () => {
       console.error('Error clearing completed todos:', error.message);
       setError(error.message);
     }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const filteredTodos = todos.filter(todo => {
@@ -221,33 +268,83 @@ const TodoList = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="group flex items-center gap-4 p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all"
+                className="group flex flex-col gap-2 p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all"
               >
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => toggleTodo(todo.id)}
-                  className="w-6 h-6 rounded-lg border-white/20 bg-white/10 checked:bg-indigo-500 checked:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                />
-                <span
-                  className={`flex-1 text-lg ${
-                    todo.completed
-                      ? 'line-through text-white/40'
-                      : 'text-white'
-                  }`}
-                >
-                  {todo.text}
-                </span>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => deleteTodo(todo.id)}
-                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </motion.button>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
+                    onChange={() => toggleTodo(todo.id)}
+                    className="w-6 h-6 rounded-lg border-white/20 bg-white/10 checked:bg-indigo-500 checked:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  />
+                  {editingTodo === todo.id ? (
+                    <div className="flex-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:border-indigo-400"
+                        autoFocus
+                      />
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => saveEdit(todo.id)}
+                        className="px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600"
+                      >
+                        Save
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={cancelEdit}
+                        className="px-4 py-2 bg-red-500 rounded-lg hover:bg-red-600"
+                      >
+                        Cancel
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <>
+                      <span
+                        className={`flex-1 text-lg ${
+                          todo.completed
+                            ? 'line-through text-white/40'
+                            : 'text-white'
+                        }`}
+                      >
+                        {todo.text}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => startEditing(todo)}
+                          className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-300 transition-all"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => deleteTodo(todo.id)}
+                          className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </motion.button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex justify-between items-center text-sm text-white/40">
+                  <span>Created: {formatDate(todo.created_at)}</span>
+                  {todo.updated_at !== todo.created_at && (
+                    <span>Updated: {formatDate(todo.updated_at)}</span>
+                  )}
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
