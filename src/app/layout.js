@@ -1,14 +1,22 @@
+import { Inter } from 'next/font/google';
 import './globals.css'
+import { AuthProvider } from '@/context/AuthContext'
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Todo List App',
-  description: 'A modern todo list application with Supabase integration',
+  description: 'A modern todo list application with authentication',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   )
 }
